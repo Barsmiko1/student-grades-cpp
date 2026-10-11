@@ -1,3 +1,5 @@
+// This file contains the menu and everything around the Person class:
+// input, file reading, sorting and printing the result tables.
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -8,24 +10,27 @@
 
 #include "Person.h"
 
-// Keeps asking until the user types a whole number between min and max.
+// This function keeps asking until the user types a whole number between
+// min and max, and returns that number.
 int readNumber(const std::string& question, int min, int max) {
     std::string line;
     while (true) {
         std::cout << question;
+        // Input has ended (for example Ctrl+D), so stop asking.
         if (!std::getline(std::cin, line))
             return min;
         std::istringstream input(line);
         int value;
         char extra;
+        // Valid only if the line is a number, with nothing after it, in range.
         if (input >> value && !(input >> extra) && value >= min && value <= max)
             return value;
         std::cout << "Please enter a number from " << min << " to " << max << ".\n";
     }
 }
 
-// The user types one student per line and decides how many homework results
-// to give; an empty line ends the input.
+// This function lets the user type students one per line, with as many
+// homework results as they want. An empty line ends the input.
 std::vector<Person> enterStudents() {
     std::cout << "\nEnter one student per line: Name Surname HW1 HW2 ... Exam\n"
               << "Type as many homework results as you have - the last number is the exam.\n"
@@ -36,6 +41,7 @@ std::vector<Person> enterStudents() {
     while (std::cout << "Student " << students.size() + 1 << "> " && std::getline(std::cin, line) && !line.empty()) {
         std::istringstream input(line);
         Person student;
+        // The overloaded >> of Person does the reading and checking.
         if (input >> student)
             students.push_back(student);
         else
@@ -44,7 +50,8 @@ std::vector<Person> enterStudents() {
     return students;
 }
 
-// The user types only the names; homework and exam results are random.
+// This function lets the user type only names and surnames; the homework
+// and exam results of every student are generated randomly.
 std::vector<Person> generateStudents() {
     const int homeworkCount = readNumber("How many homework results should each student get? ", 1, 100);
     std::cout << "\nNow enter the students, one per line: Name Surname\n"
@@ -66,8 +73,9 @@ std::vector<Person> generateStudents() {
     return students;
 }
 
-// Reads students from a text file whose first line is a header and every
-// other line is "Name Surname HW1 ... HWn Exam".
+// This function reads students from a text file into the students vector.
+// The first line is a header and every other line is
+// "Name Surname HW1 ... HWn Exam". It returns false if the file cannot be opened.
 bool readStudentsFromFile(const std::string& fileName, std::vector<Person>& students) {
     std::ifstream file(fileName);
     if (!file) {
@@ -76,10 +84,11 @@ bool readStudentsFromFile(const std::string& fileName, std::vector<Person>& stud
     }
 
     std::string line;
-    std::getline(file, line); // header
+    std::getline(file, line); // skip the header line
 
     int skipped = 0;
     while (std::getline(file, line)) {
+        // Skip lines that are empty or contain only spaces.
         if (line.find_first_not_of(" \t\r") == std::string::npos)
             continue;
         std::istringstream input(line);
@@ -94,13 +103,16 @@ bool readStudentsFromFile(const std::string& fileName, std::vector<Person>& stud
     return true;
 }
 
+// This function tells std::sort which of two students comes first:
+// ordered by name, and by surname when the names are equal.
 bool byName(const Person& a, const Person& b) {
     if (a.name() != b.name())
         return a.name() < b.name();
     return a.surname() < b.surname();
 }
 
-// Table for file data: both the average and the median based final grade.
+// This function prints the table used for file data, with both the average
+// and the median based final grade of every student.
 void printBothFinals(const std::vector<Person>& students) {
     std::cout << std::fixed << std::setprecision(2)
               << std::left << std::setw(20) << "Name" << std::setw(20) << "Surname"
@@ -114,6 +126,8 @@ void printBothFinals(const std::vector<Person>& students) {
                   << std::setw(12) << student.finalGrade(Method::Median) << "\n";
 }
 
+// This function does the whole file mode: read, sort, print.
+// It returns the exit code of the program (0 = success, 1 = error).
 int processFile(const std::string& fileName) {
     std::vector<Person> students;
     if (!readStudentsFromFile(fileName, students))
@@ -123,9 +137,11 @@ int processFile(const std::string& fileName) {
     return 0;
 }
 
+// This is where the program starts.
 // Usage: ./grades            - interactive menu
 //        ./grades <file>     - read students from the given file
 int main(int argc, char* argv[]) {
+    // A file name given on the command line skips the menu.
     if (argc > 1)
         return processFile(argv[1]);
 
@@ -159,6 +175,7 @@ int main(int argc, char* argv[]) {
     for (Person& student : students)
         student.calculateFinal(method);
 
+    // The column title shows which method was chosen.
     const std::string title = (method == Method::Average) ? "Final_Point(Aver.)" : "Final_Point(Med.)";
     std::cout << "\n" << std::left << std::setw(15) << "Name"
               << std::setw(15) << "Surname"
