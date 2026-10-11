@@ -27,6 +27,11 @@ public:
     // This destructor cleans up when a student is destroyed.
     ~Person();
 
+    // These two move a student instead of copying it. Moving just hands over
+    // the data, which is much cheaper when sorting millions of students.
+    Person(Person&& other) noexcept;
+    Person& operator=(Person&& other) noexcept;
+
     // This method fills in homeworkCount random homework results and a
     // random exam result, all in the range 1..10.
     void generateRandomScores(int homeworkCount);
@@ -40,6 +45,8 @@ public:
     // These methods let other code read the name and surname (used for sorting).
     const std::string& name() const { return name_; }
     const std::string& surname() const { return surname_; }
+    // This method returns the final grade stored by calculateFinal().
+    double finalResult() const { return final_; }
 
     // This operator reads one student: "Name Surname HW1 HW2 ... HWn Exam".
     // The number of homework results is not fixed - every number up to the

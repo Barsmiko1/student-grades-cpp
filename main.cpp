@@ -1,188 +1,115 @@
-// This file contains the menu and everything around the Person class:
-// input, file reading, sorting and printing the result tables.
-#include <algorithm>
-#include <fstream>
-#include <iomanip>
+// This file contains the menu of the program. The real work is done by the
+// functions and classes declared in the header files included below.
 #include <iostream>
-#include <sstream>
+#include <new>
 #include <string>
 #include <vector>
 
+#include "Console.h"
+#include "Errors.h"
+#include "FileIO.h"
 #include "Person.h"
+#include "SpeedTest.h"
+#include "Students.h"
 
-// This function keeps asking until the user types a whole number between
-// min and max, and returns that number.
-int readNumber(const std::string& question, int min, int max) {
-    std::string line;
-    while (true) {
-        std::cout << question;
-        // Input has ended (for example Ctrl+D), so stop asking.
-        if (!std::getline(std::cin, line))
-            return min;
-        std::istringstream input(line);
-        int value;
-        char extra;
-        // Valid only if the line is a number, with nothing after it, in range.
-        if (input >> value && !(input >> extra) && value >= min && value <= max)
-            return value;
-        std::cout << "Please enter a number from " << min << " to " << max << ".\n";
-    }
-}
-
-// This function lets the user type students one per line, with as many
-// homework results as they want. An empty line ends the input.
-std::vector<Person> enterStudents() {
-    std::cout << "\nEnter one student per line: Name Surname HW1 HW2 ... Exam\n"
-              << "Type as many homework results as you have - the last number is the exam.\n"
-              << "Add as many students as you like, then press Enter on an empty line to finish.\n";
-
-    std::vector<Person> students;
-    std::string line;
-    while (std::cout << "Student " << students.size() + 1 << "> " && std::getline(std::cin, line) && !line.empty()) {
-        std::istringstream input(line);
-        Person student;
-        // The overloaded >> of Person does the reading and checking.
-        if (input >> student)
-            students.push_back(student);
-        else
-            std::cout << "Could not read that line (results must be 0-10), try again.\n";
-    }
-    return students;
-}
-
-// This function lets the user type only names and surnames; the homework
-// and exam results of every student are generated randomly.
-std::vector<Person> generateStudents() {
-    const int homeworkCount = readNumber("How many homework results should each student get? ", 1, 100);
-    std::cout << "\nNow enter the students, one per line: Name Surname\n"
-              << "Add as many students as you like, then press Enter on an empty line to finish.\n";
-
-    std::vector<Person> students;
-    std::string line;
-    while (std::cout << "Student " << students.size() + 1 << "> " && std::getline(std::cin, line) && !line.empty()) {
-        std::istringstream input(line);
-        std::string name, surname;
-        if (input >> name >> surname) {
-            Person student(name, surname);
-            student.generateRandomScores(homeworkCount);
-            students.push_back(student);
-        } else {
-            std::cout << "Please type both a name and a surname.\n";
-        }
-    }
-    return students;
-}
-
-// This function reads students from a text file into the students vector.
-// The first line is a header and every other line is
-// "Name Surname HW1 ... HWn Exam". It returns false if the file cannot be opened.
-bool readStudentsFromFile(const std::string& fileName, std::vector<Person>& students) {
-    std::ifstream file(fileName);
-    if (!file) {
-        std::cerr << "Cannot open file \"" << fileName << "\".\n";
-        return false;
-    }
-
-    std::string line;
-    std::getline(file, line); // skip the header line
-
-    int skipped = 0;
-    while (std::getline(file, line)) {
-        // Skip lines that are empty or contain only spaces.
-        if (line.find_first_not_of(" \t\r") == std::string::npos)
-            continue;
-        std::istringstream input(line);
-        Person student;
-        if (input >> student)
-            students.push_back(student);
-        else
-            ++skipped;
-    }
-    if (skipped > 0)
-        std::cerr << "Skipped " << skipped << " line(s) that could not be read.\n";
-    return true;
-}
-
-// This function tells std::sort which of two students comes first:
-// ordered by name, and by surname when the names are equal.
-bool byName(const Person& a, const Person& b) {
-    if (a.name() != b.name())
-        return a.name() < b.name();
-    return a.surname() < b.surname();
-}
-
-// This function prints the table used for file data, with both the average
-// and the median based final grade of every student.
-void printBothFinals(const std::vector<Person>& students) {
-    std::cout << std::fixed << std::setprecision(2)
-              << std::left << std::setw(20) << "Name" << std::setw(20) << "Surname"
-              << std::right << std::setw(13) << "Final (Avg.)" << " | "
-              << std::setw(12) << "Final (Med.)" << "\n"
-              << std::string(68, '-') << "\n";
-    for (const Person& student : students)
-        std::cout << std::left << std::setw(20) << student.name()
-                  << std::setw(20) << student.surname()
-                  << std::right << std::setw(13) << student.finalGrade(Method::Average) << " | "
-                  << std::setw(12) << student.finalGrade(Method::Median) << "\n";
-}
-
-// This function does the whole file mode: read, sort, print.
-// It returns the exit code of the program (0 = success, 1 = error).
-int processFile(const std::string& fileName) {
-    std::vector<Person> students;
-    if (!readStudentsFromFile(fileName, students))
-        return 1;
-    std::sort(students.begin(), students.end(), byName);
+// This function reads a file and prints both final grades of every student.
+void showFile(const std::string& fileName) {
+    std::vector<Person> students = readStudentsFromFile(fileName);
+    sortByName(students);
     printBothFinals(students);
-    return 0;
 }
 
-// This is where the program starts.
-// Usage: ./grades            - interactive menu
-//        ./grades <file>     - read students from the given file
-int main(int argc, char* argv[]) {
-    // A file name given on the command line skips the menu.
-    if (argc > 1)
-        return processFile(argv[1]);
+// This function returns the names of the five generated test files.
+std::vector<std::string> testFileNames() {
+    std::vector<std::string> names;
+    for (int size : TEST_SIZES)
+        names.push_back(testFileName(size));
+    return names;
+}
 
-    std::cout << "How do you want to provide the results?\n"
-              << "  1 - type them in\n"
-              << "  2 - generate them randomly\n"
-              << "  3 - read them from a file\n";
-    const int source = readNumber("Choice: ", 1, 3);
+// This function shows the menu and does what the user chooses.
+void runMenu() {
+    std::cout << "What do you want to do?\n"
+              << "  1 - type the results in\n"
+              << "  2 - generate the results randomly\n"
+              << "  3 - read the results from a file\n"
+              << "  4 - generate the five test data files\n"
+              << "  5 - split a file into passed/failed and measure the speed\n";
+    const int choice = readNumber("Choice: ", 1, 5);
 
-    if (source == 3) {
+    if (choice == 3) {
         std::string fileName;
         std::cout << "File name [Students.txt]: ";
         std::getline(std::cin, fileName);
         if (fileName.empty())
             fileName = "Students.txt";
         std::cout << "\n";
-        return processFile(fileName);
+        showFile(fileName);
+        return;
     }
 
-    std::vector<Person> students = (source == 1) ? enterStudents() : generateStudents();
+    if (choice == 4) {
+        generateTestFiles(readNumber("How many homework results should each student get? ", 1, 20));
+        return;
+    }
+
+    if (choice == 5) {
+        std::string fileName;
+        std::cout << "File name [all five generated files]: ";
+        std::getline(std::cin, fileName);
+        const Method method = chooseMethod();
+        std::cout << "\n";
+        if (fileName.empty())
+            runSpeedTest(testFileNames(), method);
+        else
+            runSpeedTest({fileName}, method);
+        return;
+    }
+
+    std::vector<Person> students = (choice == 1) ? enterStudents() : generateStudents();
     if (students.empty()) {
         std::cout << "No students entered.\n";
-        return 0;
+        return;
     }
-    std::sort(students.begin(), students.end(), byName);
+    sortByName(students);
 
-    std::cout << "\nCalculate the final grade using:\n"
-              << "  1 - average of homework\n"
-              << "  2 - median of homework\n";
-    const Method method = (readNumber("Choice: ", 1, 2) == 1) ? Method::Average : Method::Median;
+    const Method method = chooseMethod();
     for (Person& student : students)
         student.calculateFinal(method);
+    printFinals(students, method);
+}
 
-    // The column title shows which method was chosen.
-    const std::string title = (method == Method::Average) ? "Final_Point(Aver.)" : "Final_Point(Med.)";
-    std::cout << "\n" << std::left << std::setw(15) << "Name"
-              << std::setw(15) << "Surname"
-              << std::right << std::setw(18) << title << "\n"
-              << std::string(48, '-') << "\n";
-    for (const Person& student : students)
-        std::cout << student << "\n";
+// This is where the program starts.
+// Usage: ./grades                  - menu
+//        ./grades <file>           - read a file and print both final grades
+//        ./grades generate         - generate the five test data files
+//        ./grades test [files...]  - speed test (default: the five generated files)
+int main(int argc, char* argv[]) {
+    try {
+        const std::vector<std::string> args(argv + 1, argv + argc);
 
+        if (args.empty()) {
+            runMenu();
+        } else if (args[0] == "generate") {
+            generateTestFiles(5);
+        } else if (args[0] == "test") {
+            const std::vector<std::string> files(args.begin() + 1, args.end());
+            runSpeedTest(files.empty() ? testFileNames() : files, Method::Average);
+        } else {
+            showFile(args[0]);
+        }
+    } catch (const FileError& error) {
+        std::cerr << "File error: " << error.what() << ".\n";
+        return 1;
+    } catch (const DataError& error) {
+        std::cerr << "Data error: " << error.what() << ".\n";
+        return 1;
+    } catch (const std::bad_alloc&) {
+        std::cerr << "Not enough memory to hold that many students.\n";
+        return 1;
+    } catch (const std::exception& error) {
+        std::cerr << "Unexpected error: " << error.what() << ".\n";
+        return 1;
+    }
     return 0;
 }

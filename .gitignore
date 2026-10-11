@@ -6,3 +6,8 @@ grades
 students1*.txt
 
 .DS_Store
+
+# generated test data and speed test results
+generated*.txt
+*_passed.txt
+*_failed.txt

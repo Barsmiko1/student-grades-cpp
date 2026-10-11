@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <numeric>
 #include <random>
+#include <utility>
 
 // This constructor creates an empty student with all results set to zero.
 Person::Person() : exam_(0), final_(0.0) {}
@@ -35,6 +36,24 @@ Person& Person::operator=(const Person& other) {
 // This destructor runs when a student is destroyed and releases its homework results.
 Person::~Person() {
     homework_.clear();
+}
+
+// This move constructor takes over the data of a student that is no longer needed.
+Person::Person(Person&& other) noexcept
+    : name_(std::move(other.name_)), surname_(std::move(other.surname_)),
+      homework_(std::move(other.homework_)), exam_(other.exam_), final_(other.final_) {}
+
+// This move assignment operator does the same for an existing student (a = std::move(b)).
+Person& Person::operator=(Person&& other) noexcept {
+    if (this == &other)
+        return *this;
+
+    name_ = std::move(other.name_);
+    surname_ = std::move(other.surname_);
+    homework_ = std::move(other.homework_);
+    exam_ = other.exam_;
+    final_ = other.final_;
+    return *this;
 }
 
 // This method gives the student random homework results and a random exam result.
@@ -119,8 +138,8 @@ std::istream& operator>>(std::istream& in, Person& p) {
 // This operator prints one table row: name and surname on the left, the
 // final grade on the right with two decimal places.
 std::ostream& operator<<(std::ostream& out, const Person& p) {
-    out << std::left << std::setw(15) << p.name_
-        << std::setw(15) << p.surname_
+    out << std::left << std::setw(20) << p.name_
+        << std::setw(20) << p.surname_
         << std::right << std::setw(18) << std::fixed << std::setprecision(2)
         << p.final_;
     return out;
