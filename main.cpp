@@ -29,11 +29,11 @@ int readNumber(const std::string& question, int min, int max) {
 std::vector<Person> enterStudents() {
     std::cout << "\nEnter one student per line: Name Surname HW1 HW2 ... Exam\n"
               << "Type as many homework results as you have - the last number is the exam.\n"
-              << "Press Enter on an empty line when you are done.\n";
+              << "Add as many students as you like, then press Enter on an empty line to finish.\n";
 
     std::vector<Person> students;
     std::string line;
-    while (std::cout << "> " && std::getline(std::cin, line) && !line.empty()) {
+    while (std::cout << "Student " << students.size() + 1 << "> " && std::getline(std::cin, line) && !line.empty()) {
         std::istringstream input(line);
         Person student;
         if (input >> student)
@@ -46,13 +46,13 @@ std::vector<Person> enterStudents() {
 
 // The user types only the names; homework and exam results are random.
 std::vector<Person> generateStudents() {
-    const int homeworkCount = readNumber("Number of homework assignments to generate: ", 1, 100);
-    std::cout << "\nEnter one student per line: Name Surname\n"
-              << "Press Enter on an empty line when you are done.\n";
+    const int homeworkCount = readNumber("How many homework results should each student get? ", 1, 100);
+    std::cout << "\nNow enter the students, one per line: Name Surname\n"
+              << "Add as many students as you like, then press Enter on an empty line to finish.\n";
 
     std::vector<Person> students;
     std::string line;
-    while (std::cout << "> " && std::getline(std::cin, line) && !line.empty()) {
+    while (std::cout << "Student " << students.size() + 1 << "> " && std::getline(std::cin, line) && !line.empty()) {
         std::istringstream input(line);
         std::string name, surname;
         if (input >> name >> surname) {
