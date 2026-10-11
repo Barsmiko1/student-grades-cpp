@@ -1,0 +1,11 @@
+Name          Surname        HW1   HW2   HW3   HW4   HW5   Exam
+Michael       Johnson          8     9    10     6    10      9
+Emma          Williams         7    10     8     5     4      6
+Oliver        Brown            9     9     7     8    10     10
+Sophia        Davis            6     5     7     6     8      7
+Liam          Miller           4     6     5     3     7      5
+Ava           Wilson          10    10     9    10     9     10
+Noah          Moore            5     7     6     8     6      4
+Isabella      Taylor           8     8     9     7     9      8
+Ethan         Anderson         3     5     4     6     2      5
+Mia           Thomas           9     6     8    10     7      9

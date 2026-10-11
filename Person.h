@@ -25,6 +25,9 @@ public:
     double finalGrade(Method method) const;
     void calculateFinal(Method method);
 
+    const std::string& name() const { return name_; }
+    const std::string& surname() const { return surname_; }
+
     // Reads one student: "Name Surname HW1 HW2 ... HWn Exam".
     // The number of homework results is not fixed - every number up to the
     // end of the input is read and the last one is taken as the exam result.
