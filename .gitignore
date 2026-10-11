@@ -1,0 +1,8 @@
+# build output
+grades
+*.o
+
+# large generated test data (too big for GitHub)
+students1*.txt
+
+.DS_Store
