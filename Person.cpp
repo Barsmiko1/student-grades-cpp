@@ -2,86 +2,96 @@
 
 #include <algorithm>
 #include <iomanip>
+#include <numeric>
+#include <random>
 
-Person::Person()
-    : homework_(nullptr), homeworkCount_(0), exam_(0), final_(0.0) {}
+Person::Person() : exam_(0), final_(0.0) {}
 
 Person::Person(const std::string& name, const std::string& surname)
-    : name_(name), surname_(surname),
-      homework_(nullptr), homeworkCount_(0), exam_(0), final_(0.0) {}
+    : name_(name), surname_(surname), exam_(0), final_(0.0) {}
 
 Person::Person(const Person& other)
     : name_(other.name_), surname_(other.surname_),
-      homework_(nullptr), homeworkCount_(other.homeworkCount_),
-      exam_(other.exam_), final_(other.final_) {
-    if (homeworkCount_ > 0) {
-        homework_ = new int[homeworkCount_];
-        std::copy(other.homework_, other.homework_ + homeworkCount_, homework_);
-    }
-}
+      homework_(other.homework_), exam_(other.exam_), final_(other.final_) {}
 
 Person& Person::operator=(const Person& other) {
     if (this == &other)
         return *this;
 
-    int* copy = nullptr;
-    if (other.homeworkCount_ > 0) {
-        copy = new int[other.homeworkCount_];
-        std::copy(other.homework_, other.homework_ + other.homeworkCount_, copy);
-    }
-    delete[] homework_;
-
     name_ = other.name_;
     surname_ = other.surname_;
-    homework_ = copy;
-    homeworkCount_ = other.homeworkCount_;
+    homework_ = other.homework_;
     exam_ = other.exam_;
     final_ = other.final_;
     return *this;
 }
 
 Person::~Person() {
-    delete[] homework_;
+    homework_.clear();
 }
 
-void Person::calculateFinal() {
-    double average = 0.0;
-    if (homeworkCount_ > 0) {
-        double sum = 0.0;
-        for (int i = 0; i < homeworkCount_; ++i)
-            sum += homework_[i];
-        average = sum / homeworkCount_;
-    }
-    final_ = 0.4 * average + 0.6 * exam_;
+void Person::generateRandomScores(int homeworkCount) {
+    static std::mt19937 generator(std::random_device{}());
+    std::uniform_int_distribution<int> score(1, 10);
+
+    homework_.clear();
+    for (int i = 0; i < homeworkCount; ++i)
+        homework_.push_back(score(generator));
+    exam_ = score(generator);
+}
+
+double Person::average() const {
+    if (homework_.empty())
+        return 0.0;
+    return std::accumulate(homework_.begin(), homework_.end(), 0.0) / homework_.size();
+}
+
+double Person::median() const {
+    if (homework_.empty())
+        return 0.0;
+
+    std::vector<int> sorted(homework_);
+    std::sort(sorted.begin(), sorted.end());
+    const std::size_t middle = sorted.size() / 2;
+    if (sorted.size() % 2 == 0)
+        return (sorted[middle - 1] + sorted[middle]) / 2.0;
+    return sorted[middle];
+}
+
+double Person::finalGrade(Method method) const {
+    const double homework = (method == Method::Median) ? median() : average();
+    return 0.4 * homework + 0.6 * exam_;
+}
+
+void Person::calculateFinal(Method method) {
+    final_ = finalGrade(method);
 }
 
 std::istream& operator>>(std::istream& in, Person& p) {
-    // Prompts are only useful when a person is typing the data.
-    const bool prompt = (&in == &std::cin);
-
-    if (prompt) std::cout << "First name: ";
-    in >> p.name_;
-    if (prompt) std::cout << "Surname: ";
-    in >> p.surname_;
-
-    int count = 0;
-    if (prompt) std::cout << "Number of homework assignments: ";
-    in >> count;
-    if (!in || count < 0) {
-        in.setstate(std::ios::failbit);
+    std::string name, surname;
+    if (!(in >> name >> surname))
         return in;
+
+    std::vector<int> scores;
+    int value;
+    while (in >> value) {
+        if (value < 0 || value > 10)
+            return in.setstate(std::ios::failbit), in;
+        scores.push_back(value);
     }
 
-    delete[] p.homework_;
-    p.homework_ = count > 0 ? new int[count] : nullptr;
-    p.homeworkCount_ = count;
-    for (int i = 0; i < count; ++i) {
-        if (prompt) std::cout << "Homework " << i + 1 << " result: ";
-        in >> p.homework_[i];
-    }
+    // The loop above must have stopped because the input ran out, not
+    // because of something that is not a number, and it needs at least the
+    // exam result.
+    if (!in.eof() || scores.empty())
+        return in.setstate(std::ios::failbit), in;
+    in.clear(std::ios::eofbit);
 
-    if (prompt) std::cout << "Exam result: ";
-    in >> p.exam_;
+    p.name_ = name;
+    p.surname_ = surname;
+    p.exam_ = scores.back();
+    scores.pop_back();
+    p.homework_ = scores;
     return in;
 }
 
