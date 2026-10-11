@@ -1,5 +1,6 @@
 // This file contains the menu of the program. The real work is done by the
 // functions and classes declared in the header files included below.
+#include <algorithm>
 #include <iostream>
 #include <new>
 #include <string>
@@ -14,7 +15,7 @@
 
 // This function reads a file and prints both final grades of every student.
 void showFile(const std::string& fileName) {
-    std::vector<Person> students = readStudentsFromFile(fileName);
+    std::vector<Person> students = readStudentsFromFile<std::vector<Person>>(fileName);
     sortByName(students);
     printBothFinals(students);
 }
@@ -57,12 +58,20 @@ void runMenu() {
         std::string fileName;
         std::cout << "File name [all five generated files]: ";
         std::getline(std::cin, fileName);
+        std::cout << "\nContainer to use:\n"
+                  << "  1 - std::vector\n"
+                  << "  2 - std::list\n"
+                  << "  3 - std::deque\n"
+                  << "  4 - all three, to compare them\n";
+        const int container = readNumber("Choice: ", 1, 4);
+        const std::vector<std::string> containers =
+            (container == 4) ? CONTAINERS : std::vector<std::string>{CONTAINERS[container - 1]};
         const Method method = chooseMethod();
         std::cout << "\n";
         if (fileName.empty())
-            runSpeedTest(testFileNames(), method);
+            runSpeedTest(testFileNames(), method, containers);
         else
-            runSpeedTest({fileName}, method);
+            runSpeedTest({fileName}, method, containers);
         return;
     }
 
@@ -83,7 +92,9 @@ void runMenu() {
 // Usage: ./grades                  - menu
 //        ./grades <file>           - read a file and print both final grades
 //        ./grades generate         - generate the five test data files
-//        ./grades test [files...]  - speed test (default: the five generated files)
+//        ./grades test [vector|list|deque] [files...]
+//                                  - speed test (default: all three containers
+//                                    on the five generated files)
 int main(int argc, char* argv[]) {
     try {
         const std::vector<std::string> args(argv + 1, argv + argc);
@@ -93,8 +104,14 @@ int main(int argc, char* argv[]) {
         } else if (args[0] == "generate") {
             generateTestFiles(5);
         } else if (args[0] == "test") {
-            const std::vector<std::string> files(args.begin() + 1, args.end());
-            runSpeedTest(files.empty() ? testFileNames() : files, Method::Average);
+            // The word after "test" may name one container; the rest are files.
+            std::vector<std::string> files(args.begin() + 1, args.end());
+            std::vector<std::string> containers = CONTAINERS;
+            if (!files.empty() && std::find(CONTAINERS.begin(), CONTAINERS.end(), files[0]) != CONTAINERS.end()) {
+                containers = {files[0]};
+                files.erase(files.begin());
+            }
+            runSpeedTest(files.empty() ? testFileNames() : files, Method::Average, containers);
         } else {
             showFile(args[0]);
         }

@@ -12,7 +12,9 @@ Functionality:
 - print a formatted table with the final grades, sorted by name;
 - generate large random data files for testing (v0.2);
 - divide the students of a file into "passed" and "failed", write each group
-  to its own file and measure how long every step takes (v0.2).
+  to its own file and measure how long every step takes (v0.2);
+- do the same with `std::vector`, `std::list` or `std::deque` and compare
+  their speed (v0.25).
 
 ## Final grade formula
 
@@ -30,7 +32,8 @@ make
 ./grades                    # menu
 ./grades Students.txt       # read a file and print both final grades
 ./grades generate           # generate the five test data files
-./grades test               # speed test on the five generated files
+./grades test               # speed test: all three containers, five generated files
+./grades test list          # speed test with one container (vector, list or deque)
 ./grades test Students.txt  # speed test on the given file(s)
 ```
 
@@ -122,8 +125,9 @@ there is enough free disk space. `./grades generate` does the same with
 
 ### 5 - split a file into passed/failed and measure the speed
 
-Enter a file name, or just press Enter to process all five generated files,
-then choose average or median. For every file the program:
+Enter a file name, or just press Enter to process all five generated files.
+Then choose the container (`std::vector`, `std::list`, `std::deque` or all
+three to compare them) and average or median. For every file the program:
 
 1. reads the students and calculates their final grades;
 2. sorts them by final grade, best first (same grade: by name);
@@ -161,6 +165,46 @@ What the numbers show:
   because every line has to be turned from text into numbers;
 - sorting 10 000 000 students takes under 3 seconds, because students are
   moved, not copied, while sorting.
+
+## Speed analysis of the containers (v0.25)
+
+The same steps were repeated with three containers holding the students:
+`std::vector`, `std::list` and `std::deque` (`./grades test`, same five
+files, same machine, one run each). All three produce exactly the same
+passed / failed files.
+
+Total program operating time in seconds:
+
+| Students   | std::vector | std::list | std::deque |
+|-----------:|------------:|----------:|-----------:|
+| 1 000      | 0.005       | 0.001     | 0.001      |
+| 10 000     | 0.020       | 0.014     | 0.013      |
+| 100 000    | 0.190       | 0.172     | 0.157      |
+| 1 000 000  | 2.298       | 2.320     | 1.855      |
+| 10 000 000 | 24.398      | 38.869    | 24.055     |
+
+Every step for the largest file (10 000 000 students), in seconds:
+
+| Container   | Read   | Sort  | Split | Write passed | Write failed | Total  |
+|-------------|-------:|------:|------:|-------------:|-------------:|-------:|
+| std::vector | 11.472 | 2.758 | 1.552 | 4.516        | 3.421        | 24.398 |
+| std::list   | 10.732 | 8.078 | 8.065 | 4.546        | 3.282        | 38.869 |
+| std::deque  | 10.497 | 2.968 | 1.227 | 5.033        | 3.323        | 24.055 |
+
+What the numbers show:
+
+- reading and writing take about the same time with every container - that
+  time is spent on the files, not on the container;
+- up to 1 000 000 students the three containers are close; the differences
+  for the smallest files are a few milliseconds and mostly measurement noise
+  (the vector row is run first);
+- at 10 000 000 students `std::list` is clearly the slowest: sorting takes
+  about 3 times longer and splitting about 5 times longer than with
+  `std::vector`. A list keeps every student in a separate piece of memory,
+  so it has to jump around the memory and needs more of it;
+- `std::vector` and `std::deque` are practically equal; `std::deque` is
+  slightly faster at reading and splitting because it grows in blocks and
+  never has to move the students it already holds.
 
 ## Exception handling (v0.2)
 
@@ -203,8 +247,9 @@ because of their size.
 - `Person.h`, `Person.cpp` - class `Person`: student data, rule of three,
   overloaded `>>` and `<<`, final grade calculation;
 - `Students.h`, `Students.cpp` - sorting a list of students and dividing it
-  into passed and failed;
-- `FileIO.h`, `FileIO.cpp` - reading, writing and generating data files;
+  into passed and failed (templates: any of the three containers);
+- `FileIO.h`, `FileIO.cpp` - reading, writing and generating data files
+  (reading and writing are templates);
 - `Console.h`, `Console.cpp` - keyboard input and tables on the screen;
 - `SpeedTest.h`, `SpeedTest.cpp` - the speed analysis;
 - `Timer.h` - class `Timer` that measures elapsed time;
@@ -217,3 +262,5 @@ because of their size.
 - **v0.1** - `Person` class, manual / random / file input, average or median.
 - **v0.2** - code divided into several `.h` / `.cpp` files, exception
   handling, test file generation, passed / failed split, speed analysis.
+- **v0.25** - the same code working with `std::vector`, `std::list` and
+  `std::deque`, speed comparison of the three containers.

@@ -1,68 +1,11 @@
-// This file contains the file reading, writing and generating functions
-// declared in FileIO.h.
+// This file contains the file generating function declared in FileIO.h
+// (the reading and writing templates are in the header itself).
 #include "FileIO.h"
 
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <random>
-#include <sstream>
-
-#include "Errors.h"
 
 std::string finalTitle(Method method) {
     return (method == Method::Average) ? "Final_Point(Aver.)" : "Final_Point(Med.)";
-}
-
-std::vector<Person> readStudentsFromFile(const std::string& fileName) {
-    std::ifstream file(fileName);
-    if (!file)
-        throw FileError("cannot open file \"" + fileName + "\"");
-
-    std::string line;
-    std::getline(file, line); // skip the header line
-
-    std::vector<Person> students;
-    std::istringstream input;
-    Person student;
-    int skipped = 0;
-    while (std::getline(file, line)) {
-        // Skip lines that are empty or contain only spaces.
-        if (line.find_first_not_of(" \t\r") == std::string::npos)
-            continue;
-        // The same string stream is reused for every line to save time.
-        input.clear();
-        input.str(line);
-        // The overloaded >> of Person does the reading and checking.
-        if (input >> student)
-            students.push_back(student);
-        else
-            ++skipped;
-    }
-
-    if (skipped > 0)
-        std::cerr << "Skipped " << skipped << " line(s) that could not be read.\n";
-    if (students.empty())
-        throw DataError("file \"" + fileName + "\" contains no students");
-    return students;
-}
-
-void writeStudentsToFile(const std::string& fileName,
-                         const std::vector<Person>& students, Method method) {
-    std::ofstream file(fileName);
-    if (!file)
-        throw FileError("cannot create file \"" + fileName + "\"");
-
-    file << std::left << std::setw(20) << "Name" << std::setw(20) << "Surname"
-         << std::right << std::setw(18) << finalTitle(method) << "\n"
-         << std::string(58, '-') << "\n";
-    // The overloaded << of Person prints one row.
-    for (const Person& student : students)
-        file << student << "\n";
-
-    // A full disk shows up here, not when the file is opened.
-    if (!file)
-        throw FileError("could not write to file \"" + fileName + "\"");
 }
 
 void generateStudentFile(const std::string& fileName, int studentCount, int homeworkCount) {
