@@ -1,52 +1,79 @@
-// This file declares the functions that work on a whole list of students:
-// sorting it and dividing it into passed and failed. The functions are
-// templates, so the same code works for std::vector, std::list and std::deque.
+// Sorting students and dividing them into passed and failed. Templates, so
+// the same code works for std::vector, std::list and std::deque.
 #ifndef STUDENTS_H
 #define STUDENTS_H
 
 #include <algorithm>
 #include <list>
+#include <string>
 #include <vector>
 
 #include "Person.h"
 
-// A student with a final grade below this mark has failed.
 const double PASS_MARK = 5.0;
 
-// This function tells a sort which of two students comes first by name.
-bool byName(const Person& a, const Person& b);
+enum class Strategy {
+    Copy,  // Strategy 1: copy into new "passed" and "failed", base keeps everyone
+    Erase  // Strategy 2: move failed into "failed", erase them from the base
+};
 
-// This function tells a sort which of two students comes first by grade:
-// the higher final grade first, and by name when the grades are equal.
+// Short names for the command line, in the same order as the enum.
+const std::vector<std::string> STRATEGIES = {"copy", "erase"};
+
+std::string strategyTitle(Strategy strategy);
+
+inline bool isFailed(const Person& student) { return student.finalResult() < PASS_MARK; }
+
+bool byName(const Person& a, const Person& b);
+// Higher final grade first, by name when equal.
 bool byFinal(const Person& a, const Person& b);
 
-// This function sorts students by name, then by surname.
 void sortByName(std::vector<Person>& students);
 
-// This function sorts students by their stored final grade, best first.
-// It works for std::vector and std::deque.
 template <typename Container>
 void sortByFinal(Container& students) {
     std::sort(students.begin(), students.end(), byFinal);
 }
 
-// This version is chosen for std::list: std::sort cannot jump around in a
-// list, so the list has its own sort() method.
+// std::sort needs random access, so a list uses its own sort().
 inline void sortByFinal(std::list<Person>& students) {
     students.sort(byFinal);
 }
 
-// This function divides students into two new containers: "passed"
-// (final grade >= 5.0) and "failed" (final grade < 5.0). It uses the final
-// grade stored by calculateFinal() and keeps the order of the students.
+// Gives back the memory of removed students (vector and deque keep it otherwise).
 template <typename Container>
-void splitStudents(const Container& students, Container& passed, Container& failed) {
+void shrinkToFit(Container& students) {
+    students.shrink_to_fit();
+}
+
+inline void shrinkToFit(std::list<Person>&) {}
+
+// Strategy 1: every student is copied, the base container is not changed.
+template <typename Container>
+void splitCopy(const Container& students, Container& passed, Container& failed) {
     for (const Person& student : students) {
-        if (student.finalResult() < PASS_MARK)
+        if (isFailed(student))
             failed.push_back(student);
         else
             passed.push_back(student);
     }
+}
+
+// Strategy 2: afterwards the base container holds only the passed students.
+// erase() in the middle of a vector or deque shifts every student behind
+// it, so this is quadratic for those two containers.
+template <typename Container>
+void splitErase(Container& students, Container& failed) {
+    auto it = students.begin();
+    while (it != students.end()) {
+        if (isFailed(*it)) {
+            failed.push_back(std::move(*it));
+            it = students.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    shrinkToFit(students);
 }
 
 #endif
