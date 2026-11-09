@@ -26,6 +26,9 @@ void generateTestFiles(int homeworkCount);
 // "data.txt" + "_passed" -> "data_passed.txt"
 std::string outputName(const std::string& fileName, const std::string& suffix);
 
+// The most memory (MB) this process has used so far.
+double peakMemoryMB();
+
 // Times in seconds for one file.
 struct Timings {
     bool skipped = false;

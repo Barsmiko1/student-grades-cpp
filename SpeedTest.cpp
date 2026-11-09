@@ -5,6 +5,14 @@
 #include <iostream>
 #include <list>
 
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#include <psapi.h>
+#else
+#include <sys/resource.h>
+#endif
+
 #include "Errors.h"
 
 std::string testFileName(int studentCount) {
@@ -26,6 +34,24 @@ std::string outputName(const std::string& fileName, const std::string& suffix) {
     if (dot == std::string::npos)
         return fileName + suffix + ".txt";
     return fileName.substr(0, dot) + suffix + fileName.substr(dot);
+}
+
+double peakMemoryMB() {
+#ifdef _WIN32
+    PROCESS_MEMORY_COUNTERS counters;
+    if (!GetProcessMemoryInfo(GetCurrentProcess(), &counters, sizeof(counters)))
+        return 0;
+    return counters.PeakWorkingSetSize / (1024.0 * 1024.0);
+#else
+    rusage usage;
+    if (getrusage(RUSAGE_SELF, &usage) != 0)
+        return 0;
+#ifdef __APPLE__
+    return usage.ru_maxrss / (1024.0 * 1024.0); // bytes on macOS
+#else
+    return usage.ru_maxrss / 1024.0;            // kilobytes on Linux
+#endif
+#endif
 }
 
 static Timings splitFileWith(const std::string& container, const std::string& fileName,
@@ -98,4 +124,6 @@ void runSpeedTest(const std::vector<std::string>& fileNames, Method method,
                   << std::setw(14) << t.writePassed << std::setw(14) << t.writeFailed
                   << std::setw(9) << t.total << "\n";
     }
+    std::cout << "\nPeak memory used by this run: " << std::setprecision(1) << peakMemoryMB()
+              << " MB (run one container and one strategy at a time to compare memory)\n";
 }
