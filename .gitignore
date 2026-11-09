@@ -1,6 +1,13 @@
-# build output
+# build output (make and cmake)
 grades
+grades.exe
 *.o
+build/
+
+# IDE files
+.vscode/
+.idea/
+*.code-workspace
 
 # large generated test data (too big for GitHub)
 students1*.txt
