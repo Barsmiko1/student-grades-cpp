@@ -3,14 +3,21 @@
 #ifndef FILEIO_H
 #define FILEIO_H
 
+#include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <string>
 
 #include "Errors.h"
 #include "Person.h"
+
+inline bool isNotSpace(char c) {
+    return !std::isspace(static_cast<unsigned char>(c));
+}
 
 std::string finalTitle(Method method);
 
@@ -34,8 +41,8 @@ Container readStudentsFromFile(const std::string& fileName) {
     Person student;
     int skipped = 0;
     while (std::getline(file, line)) {
-        if (line.find_first_not_of(" \t\r") == std::string::npos)
-            continue;
+        if (std::find_if(line.begin(), line.end(), isNotSpace) == line.end())
+            continue; // blank line
         input.clear();
         input.str(line);
         if (input >> student)
@@ -60,8 +67,7 @@ void writeStudentsToFile(const std::string& fileName, const Container& students,
     file << std::left << std::setw(20) << "Name" << std::setw(20) << "Surname"
          << std::right << std::setw(18) << finalTitle(method) << "\n"
          << std::string(58, '-') << "\n";
-    for (const Person& student : students)
-        file << student << "\n";
+    std::copy(students.begin(), students.end(), std::ostream_iterator<Person>(file, "\n"));
 
     // A full disk shows up here, not when the file is opened.
     if (!file)

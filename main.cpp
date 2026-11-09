@@ -12,7 +12,8 @@
 #include "Students.h"
 
 // In menu order, matching STRATEGIES.
-const std::vector<Strategy> ALL_STRATEGIES = {Strategy::Copy, Strategy::Erase};
+const std::vector<Strategy> ALL_STRATEGIES = {Strategy::Copy, Strategy::Erase,
+                                              Strategy::CopyAlgorithms, Strategy::Partition};
 
 void showFile(const std::string& fileName) {
     std::vector<Person> students = readStudentsFromFile<std::vector<Person>>(fileName);
@@ -21,9 +22,8 @@ void showFile(const std::string& fileName) {
 }
 
 std::vector<std::string> testFileNames() {
-    std::vector<std::string> names;
-    for (int size : TEST_SIZES)
-        names.push_back(testFileName(size));
+    std::vector<std::string> names(TEST_SIZES.size());
+    std::transform(TEST_SIZES.begin(), TEST_SIZES.end(), names.begin(), testFileName);
     return names;
 }
 
@@ -94,8 +94,8 @@ void runMenu() {
     sortByName(students);
 
     const Method method = chooseMethod();
-    for (Person& student : students)
-        student.calculateFinal(method);
+    std::for_each(students.begin(), students.end(),
+                  [method](Person& student) { student.calculateFinal(method); });
     printFinals(students, method);
 }
 

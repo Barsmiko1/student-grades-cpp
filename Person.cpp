@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iomanip>
+#include <iterator>
 #include <numeric>
 #include <random>
 #include <utility>
@@ -52,8 +53,8 @@ void Person::generateRandomScores(int homeworkCount) {
     std::uniform_int_distribution<int> score(1, 10);
 
     homework_.clear();
-    for (int i = 0; i < homeworkCount; ++i)
-        homework_.push_back(score(generator));
+    std::generate_n(std::back_inserter(homework_), homeworkCount,
+                    [&score]() { return score(generator); });
     exam_ = score(generator);
 }
 
@@ -92,14 +93,14 @@ std::istream& operator>>(std::istream& in, Person& p) {
 
     std::vector<int> scores;
     int value;
-    while (in >> value) {
-        if (value < 0 || value > 10)
-            return in.setstate(std::ios::failbit), in;
+    while (in >> value)
         scores.push_back(value);
-    }
 
-    // Reading must stop at the end of the line, not at a non-number.
-    if (!in.eof() || scores.empty())
+    // Reading must stop at the end of the line, not at a non-number, and
+    // every result must be in 0..10.
+    const auto outOfRange = [](int score) { return score < 0 || score > 10; };
+    if (!in.eof() || scores.empty() ||
+        std::find_if(scores.begin(), scores.end(), outOfRange) != scores.end())
         return in.setstate(std::ios::failbit), in;
     in.clear(std::ios::eofbit);
 

@@ -51,8 +51,8 @@ Timings splitFile(const std::string& fileName, Method method, Strategy strategy,
     Timer step;
 
     Container students = readStudentsFromFile<Container>(fileName);
-    for (Person& student : students)
-        student.calculateFinal(method);
+    std::for_each(students.begin(), students.end(),
+                  [method](Person& student) { student.calculateFinal(method); });
     times.read = step.elapsed();
     times.students = students.size();
 
@@ -66,14 +66,17 @@ Timings splitFile(const std::string& fileName, Method method, Strategy strategy,
     // students would already sit together at the end.
     step.reset();
     Container passed, failed;
-    if (strategy == Strategy::Copy)
-        splitCopy(students, passed, failed);
-    else
-        splitErase(students, failed);
+    switch (strategy) {
+    case Strategy::Copy:           splitCopy(students, passed, failed); break;
+    case Strategy::CopyAlgorithms: splitCopyAlgorithms(students, passed, failed); break;
+    case Strategy::Erase:          splitErase(students, failed); break;
+    case Strategy::Partition:      splitPartition(students, failed); break;
+    }
     times.split = step.elapsed();
 
     // With Strategy 2 the base container itself holds the passed students.
-    Container& passedGroup = (strategy == Strategy::Copy) ? passed : students;
+    const bool keepsBase = (strategy == Strategy::Erase || strategy == Strategy::Partition);
+    Container& passedGroup = keepsBase ? students : passed;
     times.passed = passedGroup.size();
     times.failed = failed.size();
 
