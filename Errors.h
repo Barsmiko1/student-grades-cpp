@@ -1,18 +1,17 @@
-// This file declares the exception classes the program throws when
-// something goes wrong, so that main() can catch each kind separately.
+// Exceptions thrown by the program and caught in main().
 #ifndef ERRORS_H
 #define ERRORS_H
 
 #include <stdexcept>
 #include <string>
 
-// This exception is thrown when a file cannot be opened or written.
+// A file cannot be opened, created or written.
 class FileError : public std::runtime_error {
 public:
     explicit FileError(const std::string& message) : std::runtime_error(message) {}
 };
 
-// This exception is thrown when a file opens but its content is not usable.
+// A file opens but contains no usable students.
 class DataError : public std::runtime_error {
 public:
     explicit DataError(const std::string& message) : std::runtime_error(message) {}

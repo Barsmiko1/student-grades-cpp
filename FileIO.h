@@ -1,5 +1,4 @@
-// This file declares the functions that read students from a file, write
-// them to a file and generate random test data files. Reading and writing
+// Reading, writing and generating student data files. Reading and writing
 // are templates, so they work for std::vector, std::list and std::deque.
 #ifndef FILEIO_H
 #define FILEIO_H
@@ -13,19 +12,14 @@
 #include "Errors.h"
 #include "Person.h"
 
-// This function returns the column title for the chosen method.
 std::string finalTitle(Method method);
 
-// This function creates a data file with studentCount students named
-// Name1 Surname1, Name2 Surname2, ... and random results from 1 to 10.
-// It throws FileError if the file cannot be created.
+// Creates a file with students Name1 Surname1, Name2 Surname2, ... and
+// random results from 1 to 10.
 void generateStudentFile(const std::string& fileName, int studentCount, int homeworkCount);
 
-// This function reads all students from a text file into a container of the
-// requested type, for example readStudentsFromFile<std::list<Person>>(name).
-// The first line is a header and every other line is
-// "Name Surname HW1 ... HWn Exam". It throws FileError if the file cannot
-// be opened and DataError if the file contains no students.
+// The first line is a header, every other line is "Name Surname HW1 ... HWn Exam".
+// Usage: readStudentsFromFile<std::list<Person>>(fileName)
 template <typename Container>
 Container readStudentsFromFile(const std::string& fileName) {
     std::ifstream file(fileName);
@@ -33,20 +27,17 @@ Container readStudentsFromFile(const std::string& fileName) {
         throw FileError("cannot open file \"" + fileName + "\"");
 
     std::string line;
-    std::getline(file, line); // skip the header line
+    std::getline(file, line); // header
 
     Container students;
-    std::istringstream input;
+    std::istringstream input; // reused for every line to save time
     Person student;
     int skipped = 0;
     while (std::getline(file, line)) {
-        // Skip lines that are empty or contain only spaces.
         if (line.find_first_not_of(" \t\r") == std::string::npos)
             continue;
-        // The same string stream is reused for every line to save time.
         input.clear();
         input.str(line);
-        // The overloaded >> of Person does the reading and checking.
         if (input >> student)
             students.push_back(student);
         else
@@ -60,8 +51,6 @@ Container readStudentsFromFile(const std::string& fileName) {
     return students;
 }
 
-// This function writes a table (name, surname, stored final grade) to a
-// file. It throws FileError if the file cannot be created or written.
 template <typename Container>
 void writeStudentsToFile(const std::string& fileName, const Container& students, Method method) {
     std::ofstream file(fileName);
@@ -71,7 +60,6 @@ void writeStudentsToFile(const std::string& fileName, const Container& students,
     file << std::left << std::setw(20) << "Name" << std::setw(20) << "Surname"
          << std::right << std::setw(18) << finalTitle(method) << "\n"
          << std::string(58, '-') << "\n";
-    // The overloaded << of Person prints one row.
     for (const Person& student : students)
         file << student << "\n";
 

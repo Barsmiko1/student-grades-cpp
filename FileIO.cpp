@@ -1,5 +1,3 @@
-// This file contains the file generating function declared in FileIO.h
-// (the reading and writing templates are in the header itself).
 #include "FileIO.h"
 
 #include <random>
@@ -16,7 +14,6 @@ void generateStudentFile(const std::string& fileName, int studentCount, int home
     std::mt19937 generator(std::random_device{}());
     std::uniform_int_distribution<int> score(1, 10);
 
-    // Header line: Name Surname HW1 HW2 ... Exam
     file << std::left << std::setw(20) << "Name" << std::setw(20) << "Surname" << std::right;
     for (int i = 1; i <= homeworkCount; ++i)
         file << std::setw(6) << ("HW" + std::to_string(i));
@@ -25,8 +22,7 @@ void generateStudentFile(const std::string& fileName, int studentCount, int home
     for (int i = 1; i <= studentCount; ++i) {
         file << std::left << std::setw(20) << ("Name" + std::to_string(i))
              << std::setw(20) << ("Surname" + std::to_string(i)) << std::right;
-        // One extra number at the end is the exam result.
-        for (int j = 0; j <= homeworkCount; ++j)
+        for (int j = 0; j <= homeworkCount; ++j) // the extra number is the exam
             file << std::setw(6) << score(generator);
         file << "\n";
     }

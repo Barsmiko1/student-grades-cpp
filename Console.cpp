@@ -1,5 +1,3 @@
-// This file contains the keyboard input and screen output functions
-// declared in Console.h.
 #include "Console.h"
 
 #include <iomanip>
@@ -13,12 +11,10 @@ int readNumber(const std::string& question, int min, int max) {
     std::string line;
     while (true) {
         std::cout << question;
-        // Input has ended (for example Ctrl+D), so stop asking.
-        if (!std::getline(std::cin, line))
+        if (!std::getline(std::cin, line)) // input ended (Ctrl+D)
             return min;
 
         try {
-            // std::stoi throws if the text is not a number or is too big.
             std::size_t used = 0;
             const int value = std::stoi(line, &used);
             if (line.find_first_not_of(" \t\r", used) != std::string::npos)
@@ -51,7 +47,6 @@ std::vector<Person> enterStudents() {
     while (std::cout << "Student " << students.size() + 1 << "> " && std::getline(std::cin, line) && !line.empty()) {
         std::istringstream input(line);
         Person student;
-        // The overloaded >> of Person does the reading and checking.
         if (input >> student)
             students.push_back(student);
         else
@@ -82,7 +77,6 @@ std::vector<Person> generateStudents() {
 }
 
 void printFinals(const std::vector<Person>& students, Method method) {
-    // The column title shows which method was chosen.
     std::cout << "\n" << std::left << std::setw(20) << "Name"
               << std::setw(20) << "Surname"
               << std::right << std::setw(18) << finalTitle(method) << "\n"
